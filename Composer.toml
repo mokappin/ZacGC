@@ -1,0 +1,11 @@
+[project]
+name = "pastryng"
+version = "1.2.0"
+description = ""
+authors = []
+entry = "main.luau"
+source = "src"
+
+[options]
+# allow_unsafe_compile = true
+root_dir = "./app"

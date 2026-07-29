@@ -1,0 +1,10 @@
+{
+	"languageMode": "strict",
+	"lint": {"*": true, "LocalUnused": false, "LocalShadow": false},
+	"lintErrors": true,
+	"globals": ["tera"],
+	"aliases": {
+	    "webc": "./.webc/types",
+	    "collections": "./.webc/collections"
+	}
+}
