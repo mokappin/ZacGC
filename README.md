@@ -1,4 +1,6 @@
-# 🧁 pastryng
+# 🧁 ZacGC site. ^_^
+
+Made by [March](https://git.0x8e.net/m), all credits to it & [Trisua](https://trisua.com)
 
 Full rewrite of <https://pastry.diy> in Luau for [webc](https://git.0x8e.net/t/webcomposer).
 
