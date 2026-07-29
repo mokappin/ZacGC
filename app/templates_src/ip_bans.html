@@ -1,0 +1,82 @@
+{% extends "base.html" %} {% block title %}ip bans{% endblock title %} {% block
+head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    <button class="button w-max-content" onclick="ban_ip()">Add</button>
+    {% if ip_bans -%} {% for ip_ban in ip_bans -%}
+    <div class="card surface flex flex-col gap-2">
+        <code>{{ ip_ban.ip }}</code>
+        <p>{{ ip_ban.reason }}</p>
+        <span
+            >Created {{ ip_ban.created / 1000|int|date(format="%Y-%m-%d %H:%M",
+            timezone="Etc/UTC") }} UTC</span
+        >
+        <button
+            onclick="delete_ip_ban('{{ ip_ban.ip }}')"
+            class="button red w-max-content"
+        >
+            Delete
+        </button>
+    </div>
+    {%- endfor %} {% else %}
+    <b>All clear!</b>
+    {%- endif %} {% if ip_bans|length > 0 or page > 0 -%}
+    <div class="flex justify-between gap-2">
+        {% if page > 0 -%}
+        <a href="?page={{ page - 1 }}" class="button">Back</a>
+        {% else %}
+        <div></div>
+        {%- endif %} {% if ip_bans|length > 0 -%}
+        <a href="?page={{ page + 1 }}" class="button">Next</a>
+        {%- endif %}
+    </div>
+    {%- endif %}
+</div>
+
+<script>
+    function ban_ip() {
+        const ip = prompt("IP:");
+
+        if (!ip || !confirm("Are you sure you would like to do this?")) {
+            return;
+        }
+
+        const reason = prompt("Reason:");
+
+        if (!reason) {
+            return;
+        }
+
+        fetch("/api/v1/ip_bans", {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ip, reason }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("ip banned");
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function delete_ip_ban(ip) {
+        if (!confirm("Are you sure you want to do this?")) {
+            return;
+        }
+
+        fetch(`/api/v1/ip_bans/${ip}`, {
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`delete failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+{% endblock content %}

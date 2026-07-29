@@ -1,0 +1,143 @@
+{% extends "base.html" %} {% block title %}{{ profile.username }}'s Profile{%
+endblock title %} {% block head %} {{ super() }}
+
+<meta name="description" content="{{ profile.settings.bio }}" />
+<meta property="og:image" content="{{ profile.settings.avatar_url }}" />
+{% endblock head %} {% block content %}
+<main class="flex flex-collapse gap-4">
+    <div class="flex flex-col gap-4 lhs">
+        <div class="card flex flex-col items-center justify-center gap-2">
+            <h2 class="{% if profile.banned -%} del {%- endif %}">
+                {{ profile.username }}
+            </h2>
+            {{ components::avatar(user=profile, size="clamp(128px, 15dvw,
+            15dvw)") }} {{ components::user_badges(user=profile) }}
+        </div>
+
+        {% if profile.settings.bio -%}
+        <div class="card">{{ bio_html|safe }}</div>
+        {%- endif %}
+    </div>
+
+    <div class="flex flex-col gap-4 w-full">
+        <div class="card flex flex-col gap-2" style="height: max-content">
+            <h2 style="text-align: center">Friends</h2>
+            {% if friends -%}
+            <div class="friends_grid">
+                {% for friend in friends -%}
+                <a href="/@{{ friend.username }}" style="display: contents">
+                    {{ components::avatar(user=friend, size="100%") }}
+                </a>
+                {%- endfor %}
+            </div>
+            {% else %}
+            <b>Nothing here yet :(</b>
+            {%- endif %} {% if friends|length > 0 or page > 0 -%}
+            <div class="flex justify-between gap-2">
+                {% if page > 0 -%}
+                <a href="?page={{ page - 1 }}" class="button">Back</a>
+                {% else %}
+                <div></div>
+                {%- endif %} {% if friends|length > 0 -%}
+                <a href="?page={{ page + 1 }}" class="button">Next</a>
+                {%- endif %}
+            </div>
+            {%- endif %}
+        </div>
+
+        {% if user -%}
+        <div class="card flex gap-2 flex-col">
+            <h5>Actions</h5>
+            <div class="flex flex-wrap w-full gap-2">
+                {% if user and user.id == profile.id -%}
+                <a href="/user/settings" class="button">Edit profile</a>
+                {% else %} {% if existing_friendship -%} {% if
+                existing_friendship.status == 1 and user.id ==
+                existing_friendship.user2 -%}
+                <button onclick="approve_friend_request()" class="button">
+                    Accept friend request
+                </button>
+                {% else %}
+                <button onclick="remove_friendship()" class="button red">
+                    Unfriend
+                </button>
+                {%- endif %} {% else %}
+                <button onclick="send_friend_request()" class="button">
+                    Add friend
+                </button>
+                {%- endif %} {%- endif %} {% if user and "ManageUsers" in
+                user.permissions -%}
+                <a href="/@{{ profile.username }}/manage" class="button"
+                    >Manage</a
+                >
+                {%- endif %}
+            </div>
+        </div>
+        {%- endif %}
+    </div>
+</main>
+
+<script>
+    function approve_friend_request() {
+        fetch("/api/v1/friendships/{{ profile.id }}/approve", {
+            method: "POST",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`friendship failed: ${res.message}`);
+                }
+            });
+    }
+
+    function send_friend_request() {
+        fetch("/api/v1/friendships/{{ profile.id }}", {
+            method: "POST",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`friendship failed: ${res.message}`);
+                }
+            });
+    }
+
+    function remove_friendship() {
+        fetch("/api/v1/friendships/{{ profile.id }}", {
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`friendship removal failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+
+<style>
+    .friends_grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .lhs {
+        max-width: 30dvw;
+        width: 30dvw;
+
+        @media screen and (max-width: 900px) {
+            & {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+    }
+</style>
+{% endblock content %}

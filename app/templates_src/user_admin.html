@@ -1,0 +1,291 @@
+{% extends "base.html" %} {% block title %}{{ profile.username }} admin panel{%
+endblock title %} {% block head %} {{ super() }} {% endblock head %} {% block
+content %}
+<main class="flex flex-collapse gap-4">
+    <div class="flex flex-col gap-4 lhs">
+        <div class="card flex flex-col items-center justify-center gap-2">
+            <h2>{{ profile.username }}</h2>
+            {{ components::avatar(user=profile, size="clamp(128px, 15dvw,
+            15dvw)") }}
+        </div>
+
+        <div class="card">
+            {{ profile.settings.bio }}
+            <hr />
+            <ul>
+                <li><b>Pastes:</b> {{ profile.pastes }}</li>
+            </ul>
+        </div>
+        {% if profile.ban_reason -%}
+        <div class="card flex flex-col gap-2">
+            <h5>Banned for</h5>
+            <span>{{ profile.ban_reason }}</span>
+        </div>
+        {%- endif %}
+        <div class="card flex flex-col gap-2">
+            {% for session in profile.sessions -%}
+            <a href="javascript:ban_ip('{{ session.ip }}')">{{ session.ip }}</a>
+            {%- endfor %}
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-4 w-full">
+        <div class="card flex flex-col gap-2" style="height: max-content">
+            <h2 style="text-align: center">Pastes</h2>
+            {% if pastes -%} {% for paste in pastes -%}
+            <div class="card surface flex flex-col gap-2">
+                <a href="/{{ paste.slug }}">
+                    <b>{{ paste.slug }}</b>
+                </a>
+                <span
+                    >Created {{ paste.created / 1000|int|date(format="%Y-%m-%d
+                    %H:%M", timezone="Etc/UTC") }} UTC</span
+                >
+            </div>
+            {%- endfor %} {% else %}
+            <b>Nothing here yet :(</b>
+            {%- endif %} {% if pastes|length > 0 or page > 0 -%}
+            <div class="flex justify-between gap-2">
+                {% if page > 0 -%}
+                <a href="?page={{ page - 1 }}" class="button">Back</a>
+                {% else %}
+                <div></div>
+                {%- endif %} {% if pastes|length > 0 -%}
+                <a href="?page={{ page + 1 }}" class="button">Next</a>
+                {%- endif %}
+            </div>
+            {%- endif %}
+        </div>
+
+        <form
+            class="card flex gap-2 flex-col"
+            onsubmit="
+                event.preventDefault();
+                update_permissions(
+                    event.target.permissions.value
+                        .split(',')
+                        .map((x) => x.trim()),
+                );
+            "
+        >
+            <label for="permissions"><h5>Permissions</h5></label>
+            <input
+                type="text"
+                placeholder="permissions"
+                name="permissions"
+                id="permissions"
+                value="{% for permission in profile.permissions -%} {{ permission }}, {%- endfor %}"
+            />
+            <button class="button w-max-content">Save</button>
+        </form>
+
+        <form
+            class="card flex gap-2 flex-col"
+            onsubmit="
+                event.preventDefault();
+                update_badges(
+                    event.target.badges.value.split(',').map((x) => x.trim()),
+                );
+            "
+        >
+            <label for="badges"><h5>Badges</h5></label>
+            <input
+                type="text"
+                placeholder="badges"
+                name="badges"
+                id="badges"
+                value="{% for badge in profile.badges -%} {{ badge }}, {%- endfor %}"
+            />
+            <button class="button w-max-content">Save</button>
+        </form>
+
+        <div class="card flex gap-2 flex-col">
+            <h5>Actions</h5>
+            <div class="flex flex-wrap w-full gap-2">
+                {% if not profile.banned -%}
+                <button
+                    onclick="update_ban_status_request(true)"
+                    class="button red"
+                >
+                    Ban user
+                </button>
+                {% else %}
+                <button
+                    onclick="update_ban_status_request(false)"
+                    class="button"
+                >
+                    Unban user
+                </button>
+                {%- endif %}
+                <button onclick="update_user_password()" class="button red">
+                    Update password
+                </button>
+                <button onclick="delete_user()" class="button red">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function update_ban_status_request(banned) {
+        fetch("/api/v1/users/{{ profile.id }}/banned", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ banned }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    if (banned) {
+                        update_ban_reason(prompt("Ban reason:"));
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_ban_reason(reason) {
+        if (!reason) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ profile.id }}/ban_reason", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_permissions(permissions) {
+        fetch("/api/v1/users/{{ profile.id }}/permissions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ permissions }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_badges(badges) {
+        fetch("/api/v1/users/{{ profile.id }}/badges", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ badges }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function delete_user() {
+        if (!confirm("Are you sure you would like to do this?")) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ profile.id }}", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: "adminpass" }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function ban_ip(ip) {
+        if (!confirm("Are you sure you would like to do this?")) {
+            return;
+        }
+
+        const reason = prompt("Reason:");
+
+        if (!reason) {
+            return;
+        }
+
+        fetch("/api/v1/ip_bans", {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ip, reason }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("ip banned");
+                } else {
+                    alert(`update failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_user_password(permissions) {
+        const new_password = prompt("New password:");
+
+        if (!new_password || !confirm("Are you sure you want to do this?")) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ profile.id }}/password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                password: "update_this_password",
+                new_password,
+            }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("password updated");
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+
+<style>
+    .lhs {
+        max-width: 30dvw;
+        width: 30dvw;
+
+        @media screen and (max-width: 900px) {
+            & {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+    }
+</style>
+{% endblock content %}

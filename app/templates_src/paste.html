@@ -1,0 +1,30 @@
+{% extends "base.html" %} {% block title %}{{ paste.slug }}{% endblock title %}
+{% block head %} {{ super() }}
+<meta name="description" content="{{ paste_content }}" />
+{% endblock head %} {% block content %}
+<div class="card" style="min-height: max-content">{{ paste_content|safe }}</div>
+<div class="flex justify-between gap-2">
+    <a href="/edit/{{ paste.slug }}" class="button">Edit</a>
+
+    <div class="flex flex-col" style="align-items: flex-end">
+        <!-- prettier-ignore -->
+        <span><b>Pub</b>: {{ paste.created / 1000|int|date(format="%Y-%m-%d %H:%M", timezone="Etc/UTC") }} UTC</span>
+        <!-- prettier-ignore -->
+        <span><b>Edit</b>: {{ paste.edited / 1000|int|date(format="%Y-%m-%d %H:%M", timezone="Etc/UTC") }} UTC</span>
+        <span>
+            <b>Owner</b>:
+            <a href="/@{{ owner.username }}">{{ owner.username }}</a>
+        </span>
+        <span><b>Views</b>: {{ paste.views }}</span>
+    </div>
+</div>
+{% endblock content %} {% block user_menu %} {% if user -%}
+<span class="item user-item top-item title">{{ paste.slug }}</span>
+<a class="item user-item" href="/claim/{{ paste.slug }}">reclaim</a>
+<a
+    target="_blank"
+    class="item user-item bot-item"
+    href="https://stack.shrimpcamp.com/issues/{{ config.issuestack_reports_project_id }}/new?disable_public_toggle&is_public=false&title={{ paste.slug }}"
+    >report</a
+>
+{%- endif %} {% endblock %}

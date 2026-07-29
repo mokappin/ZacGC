@@ -1,0 +1,237 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    <div class="card surface flex flex-col gap-2">
+        <label for="title"><b>Title</b></label>
+        <input
+            type="text"
+            placeholder="title"
+            name="title"
+            id="title"
+            value="{{ paste.settings.title }}"
+            onchange="SETTINGS.title = event.target.value"
+        />
+    </div>
+
+    <div class="card surface flex flex-col gap-2">
+        <label for="favicon"><b>Favicon URL</b></label>
+        <input
+            type="url"
+            placeholder="favicon"
+            name="favicon"
+            id="favicon"
+            value="{{ paste.settings.favicon }}"
+            onchange="SETTINGS.favicon = event.target.value"
+        />
+    </div>
+
+    <div class="card surface flex flex-col gap-2">
+        <label for="embed_color"><b>Embed color</b></label>
+        <input
+            type="color"
+            placeholder="embed color"
+            name="embed_color"
+            id="embed_color"
+            value="{{ paste.settings.embed_color }}"
+            onchange="SETTINGS.embed_color = event.target.value"
+        />
+    </div>
+
+    <div class="card surface flex flex-col gap-2">
+        <label for="embed_image"><b>Embed image URL</b></label>
+        <input
+            type="url"
+            placeholder="embed image"
+            name="embed_image"
+            id="embed_image"
+            value="{{ paste.settings.embed_image }}"
+            onchange="SETTINGS.embed_image = event.target.value"
+        />
+    </div>
+
+    <form
+        class="card surface flex flex-col gap-2"
+        onsubmit="event.preventDefault(); update_paste_slug(event)"
+    >
+        <label for="new_slug"><b>Update slug</b></label>
+        <input
+            type="text"
+            placeholder="new slug"
+            name="new_slug"
+            id="new_slug"
+        />
+        <button class="button w-max-content">Confirm</button>
+    </form>
+
+    <form
+        class="card surface flex flex-col gap-2"
+        onsubmit="event.preventDefault(); transfer_paste(event)"
+    >
+        <h5>Transfer paste</h5>
+        <label for="username"><b>Username</b></label>
+        <input
+            type="text"
+            placeholder="receiver username"
+            name="username"
+            id="username"
+        />
+        <button class="button w-max-content">Confirm</button>
+    </form>
+
+    <div class="flex justify-between flex-wrap gap-2">
+        <div class="flex gap-2">
+            <button
+                class="button w-max-content"
+                onclick="update_paste_settings()"
+            >
+                Save
+            </button>
+
+            {% if "ManagePastes" in user.permissions -%} {% if not
+            paste.is_locked -%}
+            <button
+                class="button w-max-content"
+                onclick="update_paste_is_locked(true)"
+            >
+                Lock
+            </button>
+            {% else %}
+            <button
+                class="button w-max-content"
+                onclick="update_paste_is_locked(false)"
+            >
+                Unlock
+            </button>
+            {%- endif %}
+            <script>
+                function update_paste_is_locked(is_locked) {
+                    fetch("/api/v1/pastes/{{ paste.id }}/is_locked", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ is_locked }),
+                    })
+                        .then((res) => res.json())
+                        .then((res) => {
+                            if (res.ok) {
+                                window.location.reload();
+                            } else {
+                                alert(`save failed: ${res.message}`);
+                            }
+                        });
+                }
+            </script>
+            {%- endif %}
+
+            <a href="/{{ paste.slug }}" class="button">Back</a>
+        </div>
+
+        <button class="button w-max-content red" onclick="delete_paste()">
+            Delete
+        </button>
+    </div>
+</div>
+
+<!-- prettier-ignore -->
+<script type="application/json" id="paste_settings">{{ paste.settings|json_encode()|safe }}</script>
+
+<script>
+    const SETTINGS = JSON.parse(
+        document.getElementById("paste_settings").innerHTML,
+    );
+
+    function update_paste_settings() {
+        fetch("/api/v1/pastes/{{ paste.id }}/settings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(SETTINGS),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/{{ paste.slug }}";
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_paste_slug(e) {
+        if (
+            !confirm(
+                "Are you sure you would like to do this? Your old slug will be claimable by anyone.",
+            )
+        ) {
+            return;
+        }
+
+        fetch("/api/v1/pastes/{{ paste.id }}/slug", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ slug: e.target.new_slug.value }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("slug updated");
+                    window.location.href = `/edit/${e.target.new_slug.value}/settings`;
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+
+    function delete_paste() {
+        if (
+            !confirm(
+                "Are you sure you would like to do this? It cannot be undone.",
+            )
+        ) {
+            return;
+        }
+
+        fetch("/api/v1/pastes/{{ paste.id }}", {
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/";
+                } else {
+                    alert(`delete failed: ${res.message}`);
+                }
+            });
+    }
+
+    function transfer_paste(e) {
+        if (
+            !confirm(
+                "Are you sure you would like to do this? It cannot be undone.",
+            )
+        ) {
+            return;
+        }
+
+        fetch("/api/v1/pastes/{{ paste.id }}/transfer", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: e.target.username.value }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/";
+                } else {
+                    alert(`delete failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+{% endblock content %}

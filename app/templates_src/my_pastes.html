@@ -1,0 +1,28 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    {% if pastes -%} {% for paste in pastes -%}
+    <div class="card surface paste flex flex-col gap-2">
+        <a href="/{{ paste.slug }}">
+            <b>{{ paste.slug }}</b>
+        </a>
+        <span
+            >Created {{ paste.created / 1000|int|date(format="%Y-%m-%d %H:%M",
+            timezone="Etc/UTC") }} UTC</span
+        >
+    </div>
+    {%- endfor %} {% else %}
+    <b>Nothing here yet :(</b>
+    {%- endif %} {% if pastes|length > 0 or page > 0 -%}
+    <div class="flex justify-between gap-2">
+        {% if page > 0 -%}
+        <a href="?page={{ page - 1 }}" class="button">Back</a>
+        {% else %}
+        <div></div>
+        {%- endif %} {% if pastes|length > 0 -%}
+        <a href="?page={{ page + 1 }}" class="button">Next</a>
+        {%- endif %}
+    </div>
+    {%- endif %}
+</div>
+{% endblock content %}

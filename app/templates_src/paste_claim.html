@@ -1,0 +1,26 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    <h1>Reclaim {{ paste.slug }}</h1>
+    <p>
+        When filing a reclaim for any paste, please keep our
+        <a href="{{ config.reclaim_help_guide_url }}">reclaim guidelines</a> in
+        mind.
+    </p>
+    <hr />
+    {% if claimable -%}
+    <p><b>Good news!</b> This paste is currently claimable.</p>
+    <a
+        target="_blank"
+        href="https://stack.shrimpcamp.com/issues/{{ config.issuestack_claims_project_id }}/new?disable_public_toggle&is_public=false&title={{ paste.slug }}"
+        class="button w-content"
+        >File claim</a
+    >
+    {% else %}
+    <p>
+        <b>Oh no!</b> This paste is not yet claimable. Pastes only become
+        claimable when they go 3 months without an update.
+    </p>
+    {%- endif %}
+</div>
+{% endblock content %}

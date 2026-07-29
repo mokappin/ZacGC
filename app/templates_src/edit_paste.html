@@ -1,0 +1,150 @@
+{% extends "base.html" %} {% block title %}{{ paste.slug }}{% endblock title %}
+{% block head %} {{ super() }} {% endblock head %} {% block content %}
+<form
+    onsubmit="
+        event.preventDefault();
+        update_paste_content(event);
+    "
+    style="display: contents"
+>
+    <div class="flex flex-col tab">
+        <div class="tab-bar">
+            <button
+                class="button active"
+                id="html_editor_button"
+                onclick="show_html_editor()"
+                type="button"
+            >
+                HTML
+            </button>
+            <button
+                class="button"
+                id="css_editor_button"
+                onclick="show_css_editor()"
+                type="button"
+            >
+                CSS
+            </button>
+        </div>
+
+        <div class="flex flex-collapse gap-2 tab">
+            <div class="tab">
+                <div class="card" id="html_editor"></div>
+                <div class="card hidden" id="css_editor"></div>
+            </div>
+
+            <div
+                class="tab"
+                style="
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: solid 2px var(--accent-background-color);
+                "
+            >
+                <iframe sandbox frameborder="0" id="preview_frame"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-2">
+        <button class="button" id="save_button">Save</button>
+        {% if user.id == paste.owner or "ManagePastes" in user.permissions -%}
+        <a href="/edit/{{ paste.slug }}/settings" class="button">Settings</a>
+        {%- endif %}
+    </div>
+</form>
+
+<script src="https://unpkg.com/codemirror@5.39.2/lib/codemirror.js"></script>
+
+<script src="https://unpkg.com/codemirror@5.39.2/mode/xml/xml.js"></script>
+<script src="https://unpkg.com/codemirror@5.39.2/mode/css/css.js"></script>
+
+<script src="https://unpkg.com/codemirror@5.39.2/addon/dialog/dialog.js"></script>
+<script src="https://unpkg.com/codemirror@5.39.2/addon/display/placeholder.js"></script>
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/codemirror@5.39.2/lib/codemirror.css"
+/>
+
+<!-- prettier-ignore -->
+<script type="text/html" id="html_editor_content">{{ paste_html_clean|safe }}</script>
+<!-- prettier-ignore -->
+<script type="text/html" id="css_editor_content">{{ paste_css_clean|safe }}</script>
+
+<style>
+    @media screen and (min-width: 901px) {
+        .tab:has(> #html_editor) {
+            max-width: 50%;
+            min-width: 50%;
+        }
+
+        media screen and (max-width: 900px) {
+            .tab:has(> #html_editor) {
+                max-height: 50%;
+                min-height: 50%;
+            }
+        }
+    }
+</style>
+
+<script>
+    setTimeout(() => {
+        globalThis.CSS_EDITOR_INITIALIZED = false;
+
+        globalThis.init_editor(
+            "editor",
+            "text/html",
+            "html_editor",
+            "html_editor_content",
+        );
+        globalThis.init_editor(
+            "css_editor",
+            "text/css",
+            "css_editor",
+            "css_editor_content",
+        );
+
+        // auto preview
+        let preview_timeout = null;
+
+        function change_event() {
+            if (preview_timeout) {
+                clearTimeout(preview_timeout);
+                preview_timeout = null;
+            }
+
+            preview_timeout = setTimeout(() => {
+                render_preview();
+            }, 1000);
+        }
+
+        editor.on("change", change_event);
+        css_editor.on("change", change_event);
+        render_preview();
+    }, 150);
+
+    function update_paste_content(e) {
+        e.submitter.setAttribute("disabled", "true");
+        fetch("/api/v1/pastes/{{ paste.id }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                html: editor.getValue(),
+                css: css_editor.getValue(),
+            }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/{{ paste.slug }}";
+                } else {
+                    alert(`save failed: ${res.message}`);
+                    e.submitter.removeAttribute("disabled");
+                }
+            });
+    }
+</script>
+{% endblock content %}

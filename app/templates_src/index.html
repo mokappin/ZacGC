@@ -1,0 +1,185 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %} {% if user
+%}
+<form
+    onsubmit="
+        event.preventDefault();
+        create_paste(event);
+    "
+    style="display: contents"
+>
+    <div class="flex flex-col tab">
+        <div class="tab-bar">
+            <button
+                class="button active"
+                id="html_editor_button"
+                onclick="show_html_editor()"
+                type="button"
+            >
+                HTML
+            </button>
+            <button
+                class="button"
+                id="css_editor_button"
+                onclick="show_css_editor()"
+                type="button"
+            >
+                CSS
+            </button>
+        </div>
+
+        <div class="flex flex-collapse gap-2 tab">
+            <div class="tab">
+                <div class="card" id="html_editor"></div>
+                <div class="card hidden" id="css_editor"></div>
+            </div>
+
+            <div
+                class="tab"
+                style="
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: solid 2px var(--accent-background-color);
+                "
+            >
+                <iframe sandbox frameborder="0" id="preview_frame"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-4 justify-between">
+        <button class="button" id="save_button">Save</button>
+        <input
+            type="text"
+            placeholder="Slug"
+            name="slug"
+            id="slug"
+            style="width: max-content"
+        />
+    </div>
+</form>
+
+<script src="https://unpkg.com/codemirror@5.39.2/lib/codemirror.js"></script>
+
+<script src="https://unpkg.com/codemirror@5.39.2/mode/xml/xml.js"></script>
+<script src="https://unpkg.com/codemirror@5.39.2/mode/css/css.js"></script>
+
+<script src="https://unpkg.com/codemirror@5.39.2/addon/dialog/dialog.js"></script>
+<script src="https://unpkg.com/codemirror@5.39.2/addon/display/placeholder.js"></script>
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/codemirror@5.39.2/lib/codemirror.css"
+/>
+
+<style>
+    @media screen and (min-width: 901px) {
+        .tab:has(> #html_editor) {
+            max-width: 50%;
+            min-width: 50%;
+        }
+    }
+
+    @media screen and (max-width: 900px) {
+        .tab:has(> #html_editor),
+        #html_editor {
+            max-height: 35dvh;
+            min-height: 35dvh;
+        }
+    }
+</style>
+
+<script>
+    setTimeout(() => {
+        globalThis.CSS_EDITOR_INITIALIZED = false;
+        globalThis.init_editor("editor", "text/html", "html_editor");
+        globalThis.init_editor("css_editor", "text/css", "css_editor");
+        css_editor.refresh();
+
+        // auto preview
+        let preview_timeout = null;
+
+        function change_event() {
+            if (preview_timeout) {
+                clearTimeout(preview_timeout);
+                preview_timeout = null;
+            }
+
+            preview_timeout = setTimeout(() => {
+                render_preview();
+            }, 1000);
+        }
+
+        editor.on("change", change_event);
+        css_editor.on("change", change_event);
+        render_preview();
+    }, 150);
+
+    function create_paste(e) {
+        e.submitter.setAttribute("disabled", "true");
+        fetch("/api/v1/pastes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                slug: e.target.slug.value,
+                html: editor.getValue(),
+                css: css_editor.getValue(),
+            }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = `/${res.payload.slug}`;
+                } else {
+                    alert(`creation failed: ${res.message}`);
+                    e.submitter.removeAttribute("disabled");
+                }
+            });
+    }
+</script>
+{% else %}
+<div class="card">
+    <div
+        class="flex items-center"
+        id="mobile"
+        style="gap: 30px; justify-content: center"
+    >
+        <img
+            class="desktop"
+            style="min-width: 200px; max-width: 250px; height: auto"
+            src="/public/images/home_pastry.webp"
+            title="pastry chan!!"
+        />
+        <div style="max-width: 400px">
+            <div class="flex items-center">
+                <img
+                    style="min-width: 80px; max-width: 130px; height: auto"
+                    src="/public/images/favicon.webp"
+                    title="favicon"
+                />
+                <h1 style="text-align: center">welcome to pastry.diy!</h1>
+            </div>
+            <br />
+            <p>
+                we are a pastebin website specializing in
+                <b>exclusively html/css content</b>. this means no markdown, no
+                javascript, no setup required.
+            </p>
+            <br />
+            <p>
+                you can find us at the socials below, for questions, help or
+                feedback!
+            </p>
+            <br />
+            <p>
+                <a href="">tetratto</a>,
+                <a href="https://blog.pastry.diy">blog</a>,
+                <a href="">discord</a>
+            </p>
+        </div>
+    </div>
+    <br />
+</div>
+{% endif %} {% endblock content %}

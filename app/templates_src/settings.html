@@ -1,0 +1,205 @@
+{% extends "base.html" %} {% block title %}{{ user.username }}'s settings{%
+endblock title %} {% block head %} {{ super() }} {% endblock head %} {% block
+content %}
+<div class="card flex flex-col gap-2">
+    <div class="card surface flex flex-col gap-2">
+        <label for="bio"><b>Biography</b></label>
+        <textarea
+            placeholder="biography"
+            name="bio"
+            id="bio"
+            onchange="SETTINGS.bio = event.target.value"
+        >
+{{ user.settings.bio }}</textarea
+        >
+    </div>
+
+    <div class="card surface flex flex-col gap-2">
+        <label for="css"><b>Profile custom CSS</b></label>
+        <textarea
+            placeholder="custom css"
+            name="css"
+            id="css"
+            onchange="SETTINGS.css = event.target.value"
+        >
+{{ user.settings.css }}</textarea
+        >
+    </div>
+    <div class="flex flex-collapse gap-2">
+        <div class="card surface flex flex-col gap-2">
+            <label for="avatar_url"><b>Avatar image URL</b></label>
+            <input
+                type="url"
+                placeholder="avatar image"
+                name="avatar_url"
+                id="avatar_url"
+                value="{{ user.settings.avatar_url }}"
+                onchange="SETTINGS.avatar_url = event.target.value"
+            />
+            <form
+                class="flex flex-col gap-2"
+                onsubmit="
+                    event.preventDefault();
+                    update_user_username(event);
+                "
+            >
+                <label for="new_username"><b>Update username</b></label>
+                <input
+                    type="text"
+                    placeholder="new username"
+                    name="new_username"
+                    id="new_username"
+                />
+                <button class="button w-max-content">
+                    Confirm new username
+                </button>
+            </form>
+        </div>
+        <form
+            class="card surface flex flex-col gap-2"
+            onsubmit="
+                event.preventDefault();
+                update_user_password(event);
+            "
+        >
+            <label for="new_password"><b>Current password</b></label>
+            <input
+                type="text"
+                placeholder="current password"
+                name="current_password"
+                id="current_password"
+            />
+            <label for="new_password"><b>Update password</b></label>
+            <input
+                type="text"
+                placeholder="new password"
+                name="new_password"
+                id="new_password"
+            />
+            <button class="button w-max-content">Confirm</button>
+        </form>
+    </div>
+    <div class="flex justify-between gap-2">
+        <div class="flex gap-2">
+            <button
+                class="button w-max-content"
+                onclick="update_user_settings()"
+            >
+                Save
+            </button>
+        </div>
+
+        <button class="button w-max-content red" onclick="delete_user()">
+            Delete
+        </button>
+    </div>
+</div>
+
+<!-- prettier-ignore -->
+<script type="application/json" id="user_settings">{{ user.settings|json_encode()|remove_script_tags|safe }}</script>
+
+<script>
+    const SETTINGS = JSON.parse(
+        document.getElementById("user_settings").innerHTML,
+    );
+
+    function update_user_settings() {
+        fetch("/api/v1/users/{{ user.id }}/settings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ settings: SETTINGS }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("settings saved");
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_user_username(e) {
+        if (!confirm("Are you sure you would like to do this?")) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ user.id }}/username", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: e.target.new_username.value }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("username updated");
+                    e.target.reset();
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+
+    function update_user_password(e) {
+        if (!confirm("Are you sure you would like to do this?")) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ user.id }}/password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                password: e.target.current_password.value,
+                new_password: e.target.new_password.value,
+            }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    alert("password updated");
+                    e.target.reset();
+                } else {
+                    alert(`save failed: ${res.message}`);
+                }
+            });
+    }
+
+    function delete_user() {
+        if (
+            !confirm(
+                "Are you sure you would like to do this? It cannot be undone.",
+            )
+        ) {
+            return;
+        }
+
+        const password = prompt("Enter your account password to confirm:");
+
+        if (!password) {
+            return;
+        }
+
+        fetch("/api/v1/users/{{ user.id }}", {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ password }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/";
+                } else {
+                    alert(`delete failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+{% endblock content %}

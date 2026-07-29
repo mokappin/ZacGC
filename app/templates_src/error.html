@@ -1,0 +1,22 @@
+{% extends "base.html" %} {% block title %}error.. - pastry.diy{% endblock title
+%} {% block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="items-center flex flex-col">
+    <div
+        class="flex items-center justify-center"
+        id="mobile"
+        style="text-align: center"
+    >
+        <img
+            style="max-width: 30%; min-width: 300px; padding: 10px"
+            src="/public/images/error_pastry.webp"
+        />
+        <div class="flex flex-col items-center" style="gap: 20px">
+            <h1 class="text-2xl font-bold">
+                Oops!<br />
+                Something went wrong..
+            </h1>
+            <b>{{ error }}</b>
+        </div>
+    </div>
+</div>
+{% endblock content %}

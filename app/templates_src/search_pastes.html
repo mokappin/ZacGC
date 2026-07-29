@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    <form class="flex gap-2">
+        <input
+            type="text"
+            name="query"
+            id="query"
+            placeholder="Query"
+            value="{{ query }}"
+        />
+        <button class="button">Go</button>
+    </form>
+
+    {% if pastes -%} {% for paste in pastes -%}
+    <div class="card surface flex flex-col gap-2">
+        <a href="/{{ paste.paste.slug }}">
+            <b>{{ paste.paste.slug }}</b>
+        </a>
+        <a href="/@{{ paste.owner.username }}">{{ paste.owner.username }}</a>
+        <span
+            >Created {{ paste.paste.created / 1000|int|date(format="%Y-%m-%d
+            %H:%M", timezone="Etc/UTC") }} UTC</span
+        >
+    </div>
+    {%- endfor %} {% else %}
+    <b>Nothing here yet :(</b>
+    {%- endif %} {% if pastes|length > 0 or page > 0 -%}
+    <div class="flex justify-between gap-2">
+        {% if page > 0 -%}
+        <a href="?page={{ page - 1 }}&query={{ query }}" class="button">Back</a>
+        {% else %}
+        <div></div>
+        {%- endif %} {% if pastes|length > 0 -%}
+        <a href="?page={{ page + 1 }}&query={{ query }}" class="button">Next</a>
+        {%- endif %}
+    </div>
+    {%- endif %}
+</div>
+{% endblock content %}

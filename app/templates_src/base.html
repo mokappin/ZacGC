@@ -1,0 +1,141 @@
+{%- import "components.html" as components -%}
+<!doctype html>
+<html lang="en" data-theme="light">
+    <head>
+        {% block head %}
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta property="og:type" content="website" />
+        <meta name="theme-color" content="#ffde8c" />
+        <title>{% block title %}{% endblock title %}</title>
+        <link rel="stylesheet" href="/public/style.css" />
+        <script src="/public/js/app.js"></script>
+        <link rel="icon" href="/public/favicon.svg" />
+        {% endblock head %}
+    </head>
+    <body style="display: flex; align-items: center">
+        {% block header %}
+        <nav class="site-header">
+            <div class="dropdown" id="myDropdown">
+                <button
+                    class="dropdown-activator"
+                    exclude="dropdown"
+                    onclick="open_dropdown(event)"
+                >
+                    {% if user %} {{ components::avatar(user=user) }} {% else %}
+                    {% include "icons/menu.svg" %} {% endif %}
+                </button>
+
+                <div class="inner">
+                    <a class="item" href="/info">info</a>
+                    <a class="item" href="/">create</a>
+                    {% if user %} {% if "ManageUsers" in user.permissions or
+                    "ManagePastes" in user.permissions -%}
+                    <span class="item user-item top-item title">mod tools</span>
+                    {%- endif %} {% if "ManageUsers" in user.permissions -%}
+                    <a class="item user-item" href="/user/ip_bans">ip bans</a>
+                    <a
+                        class="item user-item {% if not 'ManagePastes' in user.permissions -%} bot-item {%- endif %}"
+                        href="/user/search"
+                        >search users</a
+                    >
+                    {%- endif %} {% if "ManagePastes" in user.permissions -%}
+                    <a class="item user-item bot-item" href="/pastes/search"
+                        >search pastes</a
+                    >
+                    {%- endif %}
+
+                    <span class="item user-item top-item title"
+                        >{{ user.username }}</span
+                    >
+                    <a class="item user-item" href="/@{{ user.username }}"
+                        >my profile</a
+                    >
+                    <a class="item user-item" href="/user/pastes">my pastes</a>
+                    <a class="item user-item" href="/user/settings">settings</a>
+                    <button
+                        style="font-family: inherit"
+                        class="item user-item bot-item"
+                        onclick="userLogout()"
+                    >
+                        logout
+                    </button>
+                    {% else %}
+                    <a class="item" href="/login">login</a>
+                    <a class="item" href="/register">register</a>
+                    {% endif %} {% block user_menu %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="flex gap-2 items-center">
+                {% if user -%}
+                <a href="/user/notifs" class="flush" style="display: contents">
+                    {% if user.notification_count > 0 -%}
+                    <svg
+                        id="icon-bell-unread"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                    >
+                        <path
+                            d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M13.73 21a2 2 0 01-3.46 0"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        />
+                        <circle
+                            cx="18"
+                            cy="6"
+                            r="6"
+                            fill="#fa5252"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                    {% else %}
+                    <svg
+                        id="icon-bell-read"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                    >
+                        <path
+                            d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M13.73 21a2 2 0 01-3.46 0"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                    {%- endif %}
+                </a>
+                {%- endif %} {{ components::theme_toggle() }}
+            </div>
+        </nav>
+        {% endblock header %}
+        <div class="content_container flex flex-col gap-2">
+            {% block content %}{% endblock content %}
+            <div style="min-height: 32px"></div>
+        </div>
+        <div class="footer">
+            {% block footer %} {% endblock footer %}
+            <script src="/public/js/theme.js"></script>
+            <script src="/public/js/dropdown.js"></script>
+        </div>
+    </body>
+</html>

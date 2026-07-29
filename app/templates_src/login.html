@@ -1,0 +1,38 @@
+{% extends "base.html" %} {% block title %}login!{% endblock title %} {% block
+head %} {{ super() }} {% endblock head %} {% block content %}
+<form
+    class="card flex flex-col gap-2"
+    style="max-width: 600px; margin: 0 auto"
+    onsubmit="
+        event.preventDefault();
+        login(event);
+    "
+>
+    <input type="text" name="username" placeholder="Username" required />
+    <input type="password" name="password" placeholder="Password" required />
+    <button class="button w-max-content" type="submit">Log in</button>
+</form>
+
+<script>
+    function login(e) {
+        fetch("/api/v1/users/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                username: e.target.username.value,
+                password: e.target.password.value,
+            }),
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/";
+                } else {
+                    alert(`log-in failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+{% endblock content %}

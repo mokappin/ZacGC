@@ -1,0 +1,50 @@
+{% extends "base.html" %} {% block title %}pastry.diy{% endblock title %} {%
+block head %} {{ super() }} {% endblock head %} {% block content %}
+<div class="card flex flex-col gap-2">
+    {% if notifs -%} {% for notif in notifs -%}
+    <div class="card surface flex flex-col gap-2">
+        <a href="{{ notif.href }}">
+            <b>{{ notif.content }}</b>
+        </a>
+        <span
+            >Created {{ notif.created / 1000|int|date(format="%Y-%m-%d %H:%M",
+            timezone="Etc/UTC") }} UTC</span
+        >
+        <button
+            onclick="delete_notif('{{ notif.id }}')"
+            class="button red w-max-content"
+        >
+            Delete
+        </button>
+    </div>
+    {%- endfor %} {% else %}
+    <b>All clear!</b>
+    {%- endif %} {% if notifs|length > 0 or page > 0 -%}
+    <div class="flex justify-between gap-2">
+        {% if page > 0 -%}
+        <a href="?page={{ page - 1 }}" class="button">Back</a>
+        {% else %}
+        <div></div>
+        {%- endif %} {% if notifs|length > 0 -%}
+        <a href="?page={{ page + 1 }}" class="button">Next</a>
+        {%- endif %}
+    </div>
+    {%- endif %}
+</div>
+
+<script>
+    function delete_notif(id) {
+        fetch(`/api/v1/notifications/${id}`, {
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(`delete failed: ${res.message}`);
+                }
+            });
+    }
+</script>
+{% endblock content %}
